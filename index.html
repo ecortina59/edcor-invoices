@@ -1,0 +1,1150 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>EDCOR 2026 — Invoice Tracker (Local)</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#111a2e; --line:#233055;
+      --text:#e8efff; --muted:#93a4c7;
+      --good:#22c55e; --bad:#fb7185; --warn:#fbbf24; --info:#60a5fa;
+      --btn:#1d4ed8; --btn2:#334155;
+      --shadow:0 18px 40px rgba(0,0,0,.35);
+      --r:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;
+      background:
+        radial-gradient(1200px 700px at 20% 10%, rgba(96,165,250,.12), transparent 55%),
+        radial-gradient(900px 600px at 80% 0%, rgba(34,197,94,.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+    }
+    a{color:inherit}
+    .wrap{max-width:1200px;margin:26px auto;padding:0 18px 70px}
+    .topbar{display:flex;gap:14px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+    .brand h1{margin:0;font-size:28px;letter-spacing:.3px}
+    .brand .sub{color:var(--muted);font-size:13px;margin-top:4px}
+    .pillrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    .pill{border:1px solid var(--line);background:rgba(17,26,46,.55);padding:8px 12px;border-radius:999px;color:var(--muted);font-size:12px}
+    .pill b{color:var(--text);font-weight:600}
+    .card{background:linear-gradient(180deg, rgba(17,26,46,.86), rgba(17,26,46,.70));border:1px solid rgba(35,48,85,.9);border-radius:var(--r);box-shadow:var(--shadow)}
+    .section{padding:16px}
+    .grid{display:grid;gap:12px}
+    .grid.kpi{grid-template-columns:repeat(6, minmax(0,1fr))}
+    @media (max-width: 1100px){.grid.kpi{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media (max-width: 700px){.grid.kpi{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .kpiCard{padding:12px 12px 10px;border-radius:14px;border:1px solid var(--line);background:rgba(11,18,32,.35)}
+    .kpiCard .lbl{color:var(--muted);font-size:12px}
+    .kpiCard .val{font-size:22px;font-weight:700;margin-top:6px}
+    .kpiCard .hint{color:var(--muted);font-size:11px;margin-top:4px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .row > *{flex:1}
+    .field{display:flex;flex-direction:column;gap:6px}
+    label{color:var(--muted);font-size:12px}
+    input,select,textarea{
+      width:100%;
+      padding:10px 11px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(11,18,32,.35);
+      color:var(--text);
+      outline:none;
+    }
+    textarea{min-height:90px;resize:vertical}
+    input::placeholder,textarea::placeholder{color:rgba(147,164,199,.75)}
+    .btn{
+      padding:10px 14px;border-radius:12px;
+      border:1px solid rgba(35,48,85,.9);
+      background:rgba(29,78,216,.85);
+      color:var(--text);
+      cursor:pointer;
+      font-weight:650;
+    }
+    .btn.secondary{background:rgba(51,65,85,.55)}
+    .btn.danger{background:rgba(244,63,94,.65)}
+    .btn.warn{background:rgba(245,158,11,.60)}
+    .btn:disabled{opacity:.45;cursor:not-allowed}
+    .hr{height:1px;background:rgba(35,48,85,.9);margin:14px 0}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    th,td{text-align:left;padding:10px 10px;border-bottom:1px solid rgba(35,48,85,.9);font-size:13px}
+    th{color:var(--muted);font-weight:600}
+    tr:hover td{background:rgba(96,165,250,.06)}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid rgba(35,48,85,.9);font-size:12px;color:var(--muted);background:rgba(11,18,32,.28)}
+    .badge.good{border-color:rgba(34,197,94,.35);color:rgba(167,243,208,.95);background:rgba(34,197,94,.10)}
+    .badge.bad{border-color:rgba(251,113,133,.35);color:rgba(251,113,133,.95);background:rgba(251,113,133,.08)}
+    .badge.warn{border-color:rgba(251,191,36,.35);color:rgba(251,191,36,.95);background:rgba(251,191,36,.08)}
+    .note{color:var(--muted);font-size:12px;line-height:1.4}
+    .twoCol{display:grid;gap:12px;grid-template-columns:1.15fr .85fr}
+    @media (max-width: 900px){.twoCol{grid-template-columns:1fr}}
+    .collapse{border:1px solid var(--line);border-radius:14px;background:rgba(11,18,32,.28);overflow:hidden}
+    .collapse header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;user-select:none}
+    .collapse header .t{font-weight:700}
+    .collapse header .s{color:var(--muted);font-size:12px}
+    .collapse .body{padding:14px;border-top:1px solid rgba(35,48,85,.9);display:none}
+    .collapse.open .body{display:block}
+    .toast{position:fixed;right:16px;bottom:16px;max-width:520px;z-index:9999}
+    .toast .t{margin-top:10px;padding:12px 14px;border-radius:14px;border:1px solid rgba(35,48,85,.9);background:rgba(17,26,46,.92);box-shadow:var(--shadow);color:var(--text);font-size:13px}
+    .toast .t small{display:block;color:var(--muted);margin-top:6px}
+    .muted{color:var(--muted)}
+    .right{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+    .tiny{font-size:11px;color:var(--muted)}
+    .dangerText{color:var(--bad)}
+    .goodText{color:var(--good)}
+    .warnText{color:var(--warn)}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <h1>EDCOR 2026 — Invoice Tracker</h1>
+        <div class="sub">Local-only • Auditable • Single-file • Ops-first</div>
+      </div>
+      <div class="pillrow">
+        <div class="pill">Data: <b id="pillData">local</b></div>
+        <div class="pill">Last Import: <b id="pillImport">—</b></div>
+        <div class="pill">Version: <b class="mono">v2026-INV-1</b></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section">
+        <div class="right" style="gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap">
+          <div class="badge">Selected: <b class="mono" id="selId">—</b></div>
+          <div class="right">
+            <button class="btn secondary" id="btnOpenSettings">Admin Settings</button>
+            <button class="btn secondary" id="btnInvExport">Export JSON</button>
+            <button class="btn secondary" id="btnInvImport">Import JSON</button>
+            <button class="btn danger" id="btnResetAll">Reset (Local)</button>
+            <input type="file" id="fileInv" accept="application/json" style="display:none"/>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="grid kpi" id="kpis"></div>
+
+        <div class="hr"></div>
+
+        <div class="twoCol">
+          <div class="card" style="padding:14px">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px">
+              <div>
+                <div style="font-weight:800;font-size:16px">Projects / Job Orders (OPEN Queue)</div>
+                <div class="note">Use <b>Project ID</b> (auto-generated). Optional: client invoice number can be saved.</div>
+              </div>
+              <div class="right">
+                <input id="searchOpen" placeholder="Search (Project ID or Client) e.g., PRJ-26-001" style="max-width:360px"/>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="row">
+              <div class="field">
+                <label>Client / Project Name</label>
+                <input id="inClient" placeholder="e.g., SSD Laguna"/>
+              </div>
+              <div class="field">
+                <label>Job Type</label>
+                <select id="inJobType">
+                  <option value="INSTALLATION">INSTALLATION</option>
+                  <option value="SERVICE">SERVICE</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label>Contract Amount (PHP)</label>
+                <input id="inContract" inputmode="decimal" placeholder="e.g., 500000"/>
+              </div>
+              <div class="field">
+                <label>Client Invoice No. (optional)</label>
+                <input id="inClientInvoice" placeholder="e.g., 01670"/>
+              </div>
+            </div>
+
+            <div class="right">
+              <button class="btn" id="btnCreateProject">Create Project</button>
+              <button class="btn secondary" id="btnUpdateProject" disabled>Update Selected</button>
+              <button class="btn danger" id="btnDeleteProject" disabled>Delete Selected</button>
+            </div>
+
+            <div class="hr"></div>
+
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between">
+              <div class="badge" id="selBadge">Selected: <b class="mono" id="selId2">—</b></div>
+              <div class="right">
+                <button class="btn warn" id="btnLockProject" disabled>Lock Selected</button>
+                <button class="btn secondary" id="btnUnlockProject" disabled>Unlock (from Archive)</button>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div style="overflow:auto">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Project ID</th>
+                    <th>Client</th>
+                    <th>Job Type</th>
+                    <th>Status</th>
+                    <th>Contract</th>
+                    <th>Expenses</th>
+                    <th>Expected Gain</th>
+                    <th>Client Invoice</th>
+                    <th>Last Update</th>
+                  </tr>
+                </thead>
+                <tbody id="tblProjects"></tbody>
+              </table>
+            </div>
+
+            <div class="collapse" id="archBox" style="margin-top:12px">
+              <header>
+                <div>
+                  <div class="t">Locked Archive</div>
+                  <div class="s">Collapsed to avoid long queues. Unlock requires admin password.</div>
+                </div>
+                <div class="mono" id="archCount">0</div>
+              </header>
+              <div class="body">
+                <div style="overflow:auto">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Project ID</th><th>Client</th><th>Job Type</th><th>Status</th>
+                        <th>Contract</th><th>Expenses</th><th>Expected Gain</th>
+                        <th>Client Invoice</th><th>Last Update</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tblArchive"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:14px">
+            <div style="font-weight:800;font-size:16px">Expenses Entry (OPEN projects only)</div>
+            <div class="note">Locking a project removes it from expenses entry. Project selector auto-locks while adding expense.</div>
+
+            <div class="hr"></div>
+
+            <div class="row">
+              <div class="field">
+                <label>Project (OPEN)</label>
+                <select id="exProject"></select>
+                <div class="tiny" id="exProjectHint">—</div>
+              </div>
+              <div class="field">
+                <label>Date</label>
+                <input id="exDate" type="date"/>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label>Category</label>
+                <select id="exCat">
+                  <option value="UNIT">Unit</option>
+                  <option value="MATERIALS">Materials</option>
+                  <option value="FUEL">Fuel</option>
+                  <option value="TOLLGATE">Tollgate</option>
+                  <option value="FOOD">Food</option>
+                  <option value="OTHERS">Others</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Amount (PHP)</label>
+                <input id="exAmt" inputmode="decimal" placeholder="e.g., 2100"/>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Note (optional)</label>
+              <input id="exNote" placeholder="e.g., receipt / remarks"/>
+            </div>
+
+            <div class="right">
+              <button class="btn" id="btnAddExpense">Add Expense</button>
+              <button class="btn secondary" id="btnClearExpense">Clear</button>
+            </div>
+
+            <div class="hr"></div>
+
+            <div style="font-weight:800;margin-bottom:8px">Expense Lines (Selected OPEN Project)</div>
+            <div style="overflow:auto;max-height:330px">
+              <table>
+                <thead>
+                  <tr><th>Date</th><th>Category</th><th>Amount</th><th>Note</th><th>Action</th></tr>
+                </thead>
+                <tbody id="tblExpenses"></tbody>
+              </table>
+            </div>
+
+            <div class="collapse" id="taxBox" style="margin-top:12px">
+              <header>
+                <div>
+                  <div class="t">Quarterly Tax (Audit View)</div>
+                  <div class="s">Enter <b>Actual Tax Paid</b> per quarter; highlights if variance &gt; 10%.</div>
+                </div>
+                <div class="mono" id="taxYearBadge">—</div>
+              </header>
+              <div class="body">
+                <div class="row">
+                  <div class="field" style="max-width:160px">
+                    <label>Year</label>
+                    <input id="taxYear" inputmode="numeric"/>
+                  </div>
+                  <div class="field" style="max-width:160px;align-self:end">
+                    <button class="btn secondary" id="btnTaxRefresh">Refresh</button>
+                  </div>
+                  <div class="note" style="flex:2;align-self:end">
+                    Est. Tax = 12% × <b>Net Receipts</b> (Contract − Expenses).
+                    KPI also shows 12% × <b>Total Contract</b> (high-level view).
+                  </div>
+                </div>
+                <div class="hr"></div>
+                <div style="overflow:auto">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Quarter</th><th>Contract</th><th>Expenses</th><th>Net Receipts</th>
+                        <th>Est. Tax (12%)</th><th>Actual Tax Paid</th><th>Variance</th><th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tblQuarter"></tbody>
+                  </table>
+                </div>
+                <div class="tiny" style="margin-top:8px">
+                  Tip: Actual tax is stored locally and included in export/import.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- MODAL -->
+  <div id="modal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:9998;padding:18px">
+    <div class="card" style="max-width:780px;width:100%;padding:14px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div>
+          <div style="font-weight:900;font-size:16px" id="modalTitle">Admin Settings</div>
+          <div class="note" id="modalSub">Password, import/export access, and reset controls.</div>
+        </div>
+        <button class="btn secondary" id="modalClose">Close</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <div class="field">
+          <label>Admin Password (set / change)</label>
+          <input id="admNewPass" type="password" placeholder="create or change password"/>
+        </div>
+        <div class="field">
+          <label>Confirm Password</label>
+          <input id="admNewPass2" type="password" placeholder="repeat password"/>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>Admin Recovery Phrase (optional but recommended)</label>
+          <input id="admRecovery" placeholder="e.g., EDCOR-RECOVERY-2026"/>
+          <div class="tiny">If someone changes password, recovery phrase can still reset this device.</div>
+        </div>
+        <div class="field" style="max-width:220px;align-self:end">
+          <button class="btn" id="btnSaveAdmin">Save Admin</button>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <div class="field">
+          <label>Unlock Tools (enter password)</label>
+          <input id="admUnlockPass" type="password" placeholder="enter password to unlock tools"/>
+        </div>
+        <div class="field" style="max-width:220px;align-self:end">
+          <button class="btn secondary" id="btnUnlockTools">Unlock</button>
+        </div>
+      </div>
+      <div class="note">Unlock is per-session (until refresh). Export/Import buttons are blocked unless unlocked.</div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <div class="field">
+          <label>Reset Local Data (requires password OR recovery phrase)</label>
+          <input id="admResetPass" type="password" placeholder="enter password"/>
+        </div>
+        <div class="field" style="max-width:220px;align-self:end">
+          <button class="btn danger" id="btnResetLocal">Reset This Device</button>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="collapse open">
+        <header>
+          <div>
+            <div class="t">Audit — Password Change Monitor</div>
+            <div class="s">If password changes, we record an audit event locally.</div>
+          </div>
+        </header>
+        <div class="body" style="display:block">
+          <div class="tiny">Current admin hash: <span class="mono" id="admHash">—</span></div>
+          <div class="tiny">Password change count: <span class="mono" id="admChg">0</span></div>
+          <div class="tiny">Last change: <span class="mono" id="admLast">—</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+(function(){
+  // ---------- Utilities ----------
+  const $ = (q)=>document.querySelector(q);
+  const $$ = (q)=>Array.from(document.querySelectorAll(q));
+  const nowISO = ()=>new Date().toISOString();
+  const fmtPHP = (n)=> {
+    const x = Number(n||0);
+    return '₱' + x.toLocaleString('en-PH',{minimumFractionDigits:2, maximumFractionDigits:2});
+  };
+  const fmtInt = (n)=> Number(n||0).toLocaleString('en-PH');
+  const safeNum = (v)=> {
+    if (v===null||v===undefined) return 0;
+    if (typeof v==='number') return isFinite(v)?v:0;
+    const t = String(v).replace(/[, ]/g,'').trim();
+    const n = Number(t);
+    return isFinite(n)?n:0;
+  };
+  const pad3 = (n)=> String(n).padStart(3,'0');
+  const toast = (msg, sub='')=>{
+    const box = $('#toast');
+    const el = document.createElement('div');
+    el.className = 't';
+    el.innerHTML = `${escapeHtml(msg)}${sub?`<small>${escapeHtml(sub)}</small>`:''}`;
+    box.appendChild(el);
+    setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .35s'; }, 3500);
+    setTimeout(()=>{ el.remove(); }, 4200);
+  };
+
+  // HTML escaping
+  function escapeHtml(s){
+    return String(s??'').replace(/[&<>"']/g, c=>({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  // Simple SHA-256 using WebCrypto
+  async function sha256(text){
+    const enc = new TextEncoder().encode(text);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+
+  // ---------- Storage schema ----------
+  const NS = 'EDCOR_INVOICE_2026';
+  const KEYS = {
+    admin: NS+':admin',
+    invoice: NS+':invoice',
+    quarterTax: NS+':quarterTax'
+  };
+
+  function load(key, fallback){
+    try{
+      const raw = localStorage.getItem(key);
+      if(!raw) return structuredClone(fallback);
+      const v = JSON.parse(raw);
+      return v ?? structuredClone(fallback);
+    }catch(e){
+      return structuredClone(fallback);
+    }
+  }
+  function save(key, val){
+    localStorage.setItem(key, JSON.stringify(val));
+  }
+
+  // Defaults
+  const D_ADMIN = { passHash:'', recovery:'', toolsUnlocked:false, changeCount:0, lastChange:'', lastHash:'' };
+  const D_INVOICE = { projects:[], expenses:[], audit:[], selectedId:'', lastImport:'' };
+  const D_QTAX = { yearActual: {} }; // { "2026-Q1": 12345 }
+
+  let admin = load(KEYS.admin, D_ADMIN);
+  let inv = load(KEYS.invoice, D_INVOICE);
+  let qtax = load(KEYS.quarterTax, D_QTAX);
+
+  function persistAll(){
+    save(KEYS.admin, admin);
+    save(KEYS.invoice, inv);
+    save(KEYS.quarterTax, qtax);
+  }
+
+  // ---------- Admin / Security ----------
+  async function setAdminPassword(pass, recovery){
+    const h = await sha256(pass);
+    const prev = admin.passHash || '';
+    admin.passHash = h;
+    admin.recovery = recovery || admin.recovery || '';
+    admin.toolsUnlocked = false;
+
+    if(prev && prev !== h){
+      admin.changeCount = (admin.changeCount||0) + 1;
+      admin.lastChange = nowISO();
+      admin.lastHash = h;
+      inv.audit.push({ ts: nowISO(), type:'ADMIN_PASSWORD_CHANGED', note:'Admin password hash changed on this device.' });
+      toast('Admin password updated.', 'Audit event recorded.');
+    }else if(!prev){
+      admin.changeCount = admin.changeCount || 0;
+      admin.lastChange = nowISO();
+      admin.lastHash = h;
+      inv.audit.push({ ts: nowISO(), type:'ADMIN_PASSWORD_SET', note:'Admin password set on this device.' });
+      toast('Admin password set.', 'Keep your recovery phrase safe.');
+    }
+    persistAll();
+    renderAdminAudit();
+  }
+
+  async function checkAdmin(pass){
+    if(!admin.passHash) return false;
+    const h = await sha256(pass);
+    return h === admin.passHash;
+  }
+
+  function renderAdminAudit(){
+    $('#admHash').textContent = admin.passHash ? admin.passHash.slice(0,16)+'…' : '—';
+    $('#admChg').textContent = String(admin.changeCount||0);
+    $('#admLast').textContent = admin.lastChange ? new Date(admin.lastChange).toLocaleString() : '—';
+  }
+
+  // ---------- Invoice logic ----------
+  function genProjectId(){
+    const y = new Date().getFullYear();
+    const yy = String(y).slice(-2);
+    const prefix = `PRJ-${yy}-`;
+    const nums = inv.projects
+      .map(p=>p.id)
+      .filter(id=>String(id).startsWith(prefix))
+      .map(id=>Number(String(id).split('-').pop()))
+      .filter(n=>isFinite(n));
+    const next = (nums.length?Math.max(...nums):0)+1;
+    return prefix + pad3(next);
+  }
+
+  function getExpensesFor(pid){
+    return inv.expenses.filter(e=>e.projectId===pid);
+  }
+  function sumExpenses(pid){
+    return getExpensesFor(pid).reduce((a,e)=>a+safeNum(e.amount),0);
+  }
+
+  function computeProject(p){
+    const exp = sumExpenses(p.id);
+    const expected = safeNum(p.contract) - exp;
+    const netReceipts = expected; // contract - expenses
+    const estTaxNet = Math.max(0, netReceipts * 0.12);
+    const estTaxContract = Math.max(0, safeNum(p.contract)*0.12);
+    return { exp, expected, netReceipts, estTaxNet, estTaxContract };
+  }
+
+  function invTotals(){
+    const all = inv.projects;
+    const totalContract = all.reduce((a,p)=>a+safeNum(p.contract),0);
+    const totalExpenses = inv.expenses.reduce((a,e)=>a+safeNum(e.amount),0);
+    const netAfterExpenses = totalContract - totalExpenses;
+    const estTaxContract = Math.max(0, totalContract * 0.12);
+    const netAfterTax = netAfterExpenses - estTaxContract;
+    const locked = all.filter(p=>p.status==='LOCKED').length;
+    return { totalContract, estTaxContract, netAfterTax, totalExpenses, netAfterExpenses, locked };
+  }
+
+  function renderKPIs(){
+    const t = invTotals();
+    const k = [
+      { lbl:'Total Contract Value', val: fmtPHP(t.totalContract), hint:'Sum of all OPEN + LOCKED projects.' },
+      { lbl:'Est. Tax 12% (of Contract Value)', val: fmtPHP(t.estTaxContract), hint:'High-level tax view.' },
+      { lbl:'Net After Tax', val: fmtPHP(t.netAfterTax), hint:'(Contract − Expenses) − EstTax(Contract).' },
+      { lbl:'Total Expenses (All projects)', val: fmtPHP(t.totalExpenses), hint:'All expense lines.' },
+      { lbl:'Net After Total Expenses', val: fmtPHP(t.netAfterExpenses), hint:'Expected gain before tax.' },
+      { lbl:'Locked Projects', val: fmtInt(t.locked), hint:'Auditable closed projects.' },
+    ];
+    const box = $('#kpis');
+    box.innerHTML = '';
+    k.forEach(x=>{
+      const d = document.createElement('div');
+      d.className = 'kpiCard';
+      d.innerHTML = `
+        <div class="lbl">${escapeHtml(x.lbl)}</div>
+        <div class="val">${escapeHtml(x.val)}</div>
+        <div class="hint">${escapeHtml(x.hint)}</div>
+      `;
+      box.appendChild(d);
+    });
+  }
+
+  function renderProjectTables(){
+    const q = ($('#searchOpen').value||'').toLowerCase().trim();
+    const open = inv.projects.filter(p=>p.status==='OPEN');
+    const locked = inv.projects.filter(p=>p.status==='LOCKED');
+
+    function rowHTML(p){
+      const c = computeProject(p);
+      const last = p.updatedAt ? new Date(p.updatedAt).toLocaleString() : '—';
+      const badge = p.status==='OPEN'
+        ? `<span class="badge">OPEN</span>`
+        : `<span class="badge warn">LOCKED</span>`;
+      const mark = p.touched ? '<span class="dangerText">*</span>' : '';
+      return `
+        <tr data-id="${escapeHtml(p.id)}">
+          <td class="mono">${escapeHtml(p.id)}${mark}</td>
+          <td>${escapeHtml(p.client||'')}</td>
+          <td>${escapeHtml(p.jobType||'')}</td>
+          <td>${badge}</td>
+          <td>${escapeHtml(fmtPHP(p.contract))}</td>
+          <td>${escapeHtml(fmtPHP(c.exp))}</td>
+          <td>${escapeHtml(fmtPHP(c.expected))}</td>
+          <td>${escapeHtml(p.clientInvoice||'')}</td>
+          <td>${escapeHtml(last)}</td>
+        </tr>
+      `;
+    }
+
+    const openFiltered = open.filter(p=>{
+      if(!q) return true;
+      return (String(p.id||'').toLowerCase().includes(q) || String(p.client||'').toLowerCase().includes(q));
+    });
+
+    $('#tblProjects').innerHTML = openFiltered.map(rowHTML).join('') ||
+      `<tr><td colspan="9" class="muted">No OPEN projects yet.</td></tr>`;
+    $('#tblArchive').innerHTML = locked.map(rowHTML).join('') ||
+      `<tr><td colspan="9" class="muted">No LOCKED projects yet.</td></tr>`;
+    $('#archCount').textContent = String(locked.length);
+
+    $$('#tblProjects tr, #tblArchive tr').forEach(tr=>{
+      tr.addEventListener('click', ()=>{
+        const id = tr.getAttribute('data-id');
+        selectProject(id);
+      });
+    });
+  }
+
+  function renderSelected(){
+    const id = inv.selectedId || '';
+    $('#selId').textContent = id || '—';
+    $('#selId2').textContent = id || '—';
+
+    const p = inv.projects.find(x=>x.id===id);
+    const can = !!p;
+
+    $('#btnUpdateProject').disabled = !can;
+    $('#btnDeleteProject').disabled = !can;
+    $('#btnLockProject').disabled = !can || p.status!=='OPEN';
+    $('#btnUnlockProject').disabled = !can || p.status!=='LOCKED';
+  }
+
+  function syncExpenseProjectSelector(){
+    const open = inv.projects.filter(p=>p.status==='OPEN');
+    const sel = $('#exProject');
+    const prev = sel.value;
+
+    sel.innerHTML = open.map(p=>`<option value="${escapeHtml(p.id)}">${escapeHtml(p.id)} — ${escapeHtml(p.client||'')}</option>`).join('');
+
+    if(open.length===0){
+      sel.innerHTML = '<option value="">— No OPEN projects —</option>';
+      sel.value='';
+    }else{
+      if(open.some(p=>p.id===prev)) sel.value = prev;
+      else if(inv.selectedId && open.some(p=>p.id===inv.selectedId)) sel.value = inv.selectedId;
+      else sel.value = open[0].id;
+    }
+    updateExpenseHint();
+    renderExpensesTable();
+  }
+
+  function updateExpenseHint(){
+    const pid = $('#exProject').value;
+    const p = inv.projects.find(x=>x.id===pid);
+    $('#exProjectHint').textContent = p
+      ? `Client: ${p.client || '—'} • Job: ${p.jobType||'—'} • Contract: ${fmtPHP(p.contract)}`
+      : '—';
+  }
+
+  function renderExpensesTable(){
+    const pid = $('#exProject').value;
+    const lines = inv.expenses
+      .filter(e=>e.projectId===pid)
+      .sort((a,b)=>(String(a.date||'')).localeCompare(String(b.date||'')));
+
+    $('#tblExpenses').innerHTML = lines.map(e=>{
+      return `
+        <tr>
+          <td>${escapeHtml(e.date||'')}</td>
+          <td>${escapeHtml(e.category||'')}</td>
+          <td>${escapeHtml(fmtPHP(e.amount))}</td>
+          <td>${escapeHtml(e.note||'')}</td>
+          <td><button class="btn danger" data-del="${escapeHtml(e.id)}">Delete</button></td>
+        </tr>
+      `;
+    }).join('') || `<tr><td colspan="5" class="muted">No expense lines yet for this project.</td></tr>`;
+
+    $$('#tblExpenses [data-del]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const id = b.getAttribute('data-del');
+        inv.expenses = inv.expenses.filter(x=>x.id!==id);
+        inv.audit.push({ ts: nowISO(), type:'EXPENSE_DELETE', note:`Expense ${id} deleted.` });
+        persistAll();
+        renderAll();
+      });
+    });
+  }
+
+  function selectProject(id){
+    inv.selectedId = id || '';
+    const p = inv.projects.find(x=>x.id===inv.selectedId);
+    if(p){
+      $('#inClient').value = p.client || '';
+      $('#inJobType').value = p.jobType || 'INSTALLATION';
+      $('#inContract').value = String(p.contract||'');
+      $('#inClientInvoice').value = p.clientInvoice || '';
+
+      if(p.status==='OPEN'){
+        $('#exProject').value = p.id;
+        updateExpenseHint();
+        renderExpensesTable();
+      }
+    }
+    persistAll();
+    renderSelected();
+  }
+
+  // Create / Update / Delete
+  $('#btnCreateProject').addEventListener('click', ()=>{
+    const client = ($('#inClient').value||'').trim();
+    const jobType = $('#inJobType').value;
+    const contract = safeNum($('#inContract').value);
+    const clientInvoice = ($('#inClientInvoice').value||'').trim();
+
+    if(!client){ toast('Client/Project name is required.'); return; }
+    if(contract<=0){ toast('Contract amount must be greater than zero.'); return; }
+
+    const id = genProjectId();
+    const p = { id, client, jobType, contract, clientInvoice, status:'OPEN', createdAt: nowISO(), updatedAt: nowISO(), touched:false };
+    inv.projects.unshift(p);
+    inv.selectedId = id;
+    inv.audit.push({ ts: nowISO(), type:'PROJECT_CREATE', note:`Created ${id} (${client}).` });
+    persistAll();
+    toast('Project created.', `${id} • ${client}`);
+    renderAll();
+  });
+
+  $('#btnUpdateProject').addEventListener('click', ()=>{
+    const id = inv.selectedId;
+    const p = inv.projects.find(x=>x.id===id);
+    if(!p) return;
+
+    const client = ($('#inClient').value||'').trim();
+    const jobType = $('#inJobType').value;
+    const contract = safeNum($('#inContract').value);
+    const clientInvoice = ($('#inClientInvoice').value||'').trim();
+
+    if(!client || contract<=0){ toast('Client name and contract must be valid.'); return; }
+
+    p.client = client;
+    p.jobType = jobType;
+    p.contract = contract;
+    p.clientInvoice = clientInvoice;
+    p.updatedAt = nowISO();
+    p.touched = true;
+
+    inv.audit.push({ ts: nowISO(), type:'PROJECT_UPDATE', note:`Updated ${id}. Marked *.` });
+    persistAll();
+    toast('Project updated.', `${id} marked *`);
+    renderAll();
+  });
+
+  $('#btnDeleteProject').addEventListener('click', ()=>{
+    const id = inv.selectedId;
+    const p = inv.projects.find(x=>x.id===id);
+    if(!p) return;
+
+    if(p.status==='LOCKED'){
+      toast('Cannot delete a LOCKED project. Unlock first (admin).');
+      return;
+    }
+
+    inv.projects = inv.projects.filter(x=>x.id!==id);
+    inv.expenses = inv.expenses.filter(e=>e.projectId!==id);
+    inv.selectedId = '';
+    inv.audit.push({ ts: nowISO(), type:'PROJECT_DELETE', note:`Deleted ${id} (OPEN) with its expenses.` });
+    persistAll();
+    toast('Project deleted.', id);
+    renderAll();
+  });
+
+  // Lock / Unlock
+  $('#btnLockProject').addEventListener('click', async ()=>{
+    const id = inv.selectedId;
+    const p = inv.projects.find(x=>x.id===id);
+    if(!p || p.status!=='OPEN') return;
+
+    const pass = prompt('Admin password required to LOCK project:');
+    if(pass===null) return;
+
+    const ok = await checkAdmin(pass);
+    if(!ok){ toast('Wrong admin password.'); return; }
+
+    p.status='LOCKED';
+    p.updatedAt = nowISO();
+    inv.audit.push({ ts: nowISO(), type:'PROJECT_LOCK', note:`Locked ${id}.` });
+    persistAll();
+    toast('Project locked.', id);
+    renderAll();
+  });
+
+  $('#btnUnlockProject').addEventListener('click', async ()=>{
+    const id = inv.selectedId;
+    const p = inv.projects.find(x=>x.id===id);
+    if(!p || p.status!=='LOCKED') return;
+
+    const pass = prompt('Admin password required to UNLOCK project:');
+    if(pass===null) return;
+
+    const ok = await checkAdmin(pass);
+    if(!ok){ toast('Wrong admin password.'); return; }
+
+    p.status='OPEN';
+    p.updatedAt = nowISO();
+    p.touched = true;
+    inv.audit.push({ ts: nowISO(), type:'PROJECT_UNLOCK', note:`Unlocked ${id}. Marked *.` });
+    persistAll();
+    toast('Project unlocked.', `${id} marked *`);
+    renderAll();
+  });
+
+  $('#searchOpen').addEventListener('input', ()=>renderProjectTables());
+
+  // Expenses entry – lock selector while adding to prevent wrong invoice
+  let exBusy = false;
+  function lockExpenseSelector(lock){
+    exBusy = lock;
+    $('#exProject').disabled = lock;
+    if(lock) $('#exProjectHint').innerHTML = `<span class="warnText">Locked to prevent wrong project entry.</span>`;
+    else updateExpenseHint();
+  }
+
+  $('#btnAddExpense').addEventListener('click', ()=>{
+    const pid = $('#exProject').value;
+    const p = inv.projects.find(x=>x.id===pid);
+    if(!pid || !p){ toast('No OPEN project selected.'); return; }
+
+    const date = $('#exDate').value;
+    const category = $('#exCat').value;
+    const amount = safeNum($('#exAmt').value);
+    const note = ($('#exNote').value||'').trim();
+
+    if(!date){ toast('Date is required.'); return; }
+    if(amount<=0){ toast('Amount must be greater than zero.'); return; }
+
+    lockExpenseSelector(true);
+
+    const id = 'EXP-' + Date.now() + '-' + Math.random().toString(16).slice(2,6).toUpperCase();
+    inv.expenses.push({ id, projectId: pid, date, category, amount, note, ts: nowISO() });
+    p.updatedAt = nowISO();
+
+    inv.audit.push({ ts: nowISO(), type:'EXPENSE_ADD', note:`Added ${category} ${fmtPHP(amount)} to ${pid}.` });
+    $('#exAmt').value='';
+    $('#exNote').value='';
+
+    persistAll();
+    renderAll();
+    toast('Expense added.', `${pid} • ${category} • ${fmtPHP(amount)}`);
+
+    setTimeout(()=>lockExpenseSelector(false), 350);
+  });
+
+  $('#btnClearExpense').addEventListener('click', ()=>{
+    $('#exAmt').value='';
+    $('#exNote').value='';
+    lockExpenseSelector(false);
+  });
+
+  $('#exProject').addEventListener('change', ()=>{
+    if(exBusy){ toast('Project selector is temporarily locked.'); return; }
+    updateExpenseHint();
+    renderExpensesTable();
+  });
+
+  // Quarterly tax
+  function quarterOf(dateStr){
+    const d = new Date(dateStr+'T00:00:00');
+    const m = d.getMonth()+1;
+    if(m<=3) return 'Q1';
+    if(m<=6) return 'Q2';
+    if(m<=9) return 'Q3';
+    return 'Q4';
+  }
+
+  function renderQuarter(){
+    const year = Number($('#taxYear').value || new Date().getFullYear());
+    $('#taxYearBadge').textContent = String(year);
+
+    const quarters = ['Q1','Q2','Q3','Q4'];
+    const rows = quarters.map(q=>{
+      const expLines = inv.expenses.filter(e=>{
+        if(!e.date) return false;
+        const d = new Date(e.date+'T00:00:00');
+        return d.getFullYear()===year && quarterOf(e.date)===q;
+      });
+      const pids = [...new Set(expLines.map(e=>e.projectId))];
+      const contract = inv.projects.filter(p=>pids.includes(p.id)).reduce((a,p)=>a+safeNum(p.contract),0);
+      const expenses = expLines.reduce((a,e)=>a+safeNum(e.amount),0);
+      const netReceipts = contract - expenses;
+      const est = Math.max(0, netReceipts*0.12);
+      const key = `${year}-${q}`;
+      const actual = safeNum(qtax.yearActual[key]||0);
+
+      const variance = actual>0 ? ((actual - est)/actual)*100 : (est>0 ? 100 : 0);
+      const absVar = Math.abs(variance);
+      const status = (actual===0 && est>0) ? 'NEEDS_INPUT' : (absVar>10 ? 'ALARM' : 'OK');
+
+      return { q, contract, expenses, netReceipts, est, actual, variance, status, key };
+    });
+
+    $('#tblQuarter').innerHTML = rows.map(r=>{
+      const badge = r.status==='OK'
+        ? `<span class="badge good">OK</span>`
+        : r.status==='ALARM'
+          ? `<span class="badge bad">ALARM</span>`
+          : `<span class="badge warn">NEEDS INPUT</span>`;
+      const varTxt = (r.actual===0 && r.est>0) ? '—' : (r.variance.toFixed(1)+'%');
+      const cls = (r.status==='ALARM') ? 'dangerText' : (r.status==='NEEDS_INPUT'?'warnText':'goodText');
+
+      return `
+        <tr>
+          <td><b>${escapeHtml(r.q)}</b></td>
+          <td>${escapeHtml(fmtPHP(r.contract))}</td>
+          <td>${escapeHtml(fmtPHP(r.expenses))}</td>
+          <td>${escapeHtml(fmtPHP(r.netReceipts))}</td>
+          <td>${escapeHtml(fmtPHP(r.est))}</td>
+          <td>
+            <input data-act="${escapeHtml(r.key)}" inputmode="decimal"
+              value="${r.actual?escapeHtml(String(r.actual)):""}"
+              placeholder="enter actual" style="min-width:160px"/>
+          </td>
+          <td class="${cls}">${escapeHtml(varTxt)}</td>
+          <td>${badge}</td>
+        </tr>
+      `;
+    }).join('');
+
+    $$('#tblQuarter [data-act]').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const key = inp.getAttribute('data-act');
+        const v = safeNum(inp.value);
+        qtax.yearActual[key] = v;
+        inv.audit.push({ ts: nowISO(), type:'TAX_ACTUAL_SET', note:`Set actual tax for ${key}: ${fmtPHP(v)}` });
+        persistAll();
+        renderQuarter();
+      });
+    });
+  }
+
+  $('#btnTaxRefresh').addEventListener('click', renderQuarter);
+
+  // ---------- Import / Export ----------
+  function downloadJSON(obj, filename){
+    const blob = new Blob([JSON.stringify(obj,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 500);
+  }
+
+  function todayYMD(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const da = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${da}`;
+  }
+
+  function toolsAllowed(){
+    if(!admin.passHash){
+      toast('Admin password not set yet.', 'Open Admin Settings and set one.');
+      return false;
+    }
+    if(!admin.toolsUnlocked){
+      toast('Admin tools locked.', 'Open Admin Settings → Unlock Tools.');
+      return false;
+    }
+    return true;
+  }
+
+  $('#btnInvExport').addEventListener('click', ()=>{
+    if(!toolsAllowed()) return;
+    const out = { invoice: inv, quarterTax: qtax, exportedAt: nowISO(), app:'invoice', version:'v2026-INV-1' };
+    downloadJSON(out, `edcor-invoice-tracker-${todayYMD()}.json`);
+    toast('Exported JSON.');
+  });
+
+  $('#btnInvImport').addEventListener('click', ()=>{
+    if(!toolsAllowed()) return;
+    $('#fileInv').click();
+  });
+
+  $('#fileInv').addEventListener('change', async (ev)=>{
+    const f = ev.target.files && ev.target.files[0];
+    if(!f) return;
+    try{
+      const txt = await f.text();
+      const obj = JSON.parse(txt);
+      if(obj.invoice) inv = obj.invoice;
+      if(obj.quarterTax) qtax = obj.quarterTax;
+      inv.lastImport = nowISO();
+      persistAll();
+      toast('Imported JSON.', f.name);
+      renderAll();
+    }catch(e){
+      toast('Import failed.', String(e));
+    }finally{
+      ev.target.value='';
+    }
+  });
+
+  // ---------- Modal ----------
+  function openModal(){
+    $('#modal').style.display='flex';
+    $('#admNewPass').value='';
+    $('#admNewPass2').value='';
+    $('#admRecovery').value = admin.recovery || '';
+    $('#admUnlockPass').value='';
+    $('#admResetPass').value='';
+    admin.toolsUnlocked = false; // per session
+    renderAdminAudit();
+  }
+  function closeModal(){ $('#modal').style.display='none'; }
+
+  $('#btnOpenSettings').addEventListener('click', openModal);
+  $('#modalClose').addEventListener('click', closeModal);
+  $('#modal').addEventListener('click', (e)=>{ if(e.target.id==='modal') closeModal(); });
+
+  $('#btnSaveAdmin').addEventListener('click', async ()=>{
+    const p1 = $('#admNewPass').value || '';
+    const p2 = $('#admNewPass2').value || '';
+    const rec = ($('#admRecovery').value||'').trim();
+    if(p1.length<4){ toast('Password too short. Use at least 4 characters.'); return; }
+    if(p1 !== p2){ toast('Passwords do not match.'); return; }
+    await setAdminPassword(p1, rec);
+    toast('Admin saved.', 'Use Unlock Tools for export/import.');
+  });
+
+  $('#btnUnlockTools').addEventListener('click', async ()=>{
+    const pass = $('#admUnlockPass').value || '';
+    const ok = await checkAdmin(pass);
+    if(!ok){
+      toast('Wrong admin password.');
+      admin.toolsUnlocked = false;
+      persistAll();
+      return;
+    }
+    admin.toolsUnlocked = true;
+    persistAll();
+    toast('Tools unlocked.', 'Export/Import enabled until refresh.');
+  });
+
+  async function doResetFromModal(){
+    const pass = $('#admResetPass').value || '';
+    let ok = await checkAdmin(pass);
+
+    if(!ok){
+      const rec = prompt('Wrong password. If you set a Recovery Phrase, paste it now (or Cancel).');
+      if(rec===null) return;
+      if(admin.recovery && rec.trim() === admin.recovery){
+        ok = true;
+      }else{
+        toast('Reset blocked.', 'Wrong password and wrong recovery phrase.');
+        return;
+      }
+    }
+
+    if(!confirm('This will RESET this device local data for EDCOR Invoice Tracker. Continue?')) return;
+
+    localStorage.removeItem(KEYS.invoice);
+    localStorage.removeItem(KEYS.quarterTax);
+    // keep admin, but lock tools
+    admin.toolsUnlocked = false;
+    save(KEYS.admin, admin);
+
+    inv = structuredClone(D_INVOICE);
+    qtax = structuredClone(D_QTAX);
+
+    toast('Local reset complete.', 'This device is cleared.');
+    renderAll();
+    closeModal();
+  }
+
+  $('#btnResetLocal').addEventListener('click', doResetFromModal);
+
+  // Top reset button opens modal (same gate)
+  $('#btnResetAll').addEventListener('click', openModal);
+
+  // ---------- Collapses ----------
+  function hookCollapse(id){
+    const box = $(id);
+    const head = box.querySelector('header');
+    head.addEventListener('click', ()=>box.classList.toggle('open'));
+  }
+  hookCollapse('#archBox');
+  hookCollapse('#taxBox');
+
+  // ---------- Rendering ----------
+  function renderInvoiceInputs(){
+    const ymd = new Date().toISOString().slice(0,10);
+    if(!$('#exDate').value) $('#exDate').value = ymd;
+    $('#taxYear').value = String(new Date().getFullYear());
+  }
+
+  function renderAll(){
+    $('#pillImport').textContent = inv.lastImport ? new Date(inv.lastImport).toLocaleString() : '—';
+
+    renderKPIs();
+    renderProjectTables();
+    renderSelected();
+    syncExpenseProjectSelector();
+    renderInvoiceInputs();
+    renderQuarter();
+    renderAdminAudit();
+  }
+
+  // First-run sanity
+  if(!admin.passHash){
+    toast('Admin password not set yet.', 'Open Admin Settings and set one.');
+  }
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
